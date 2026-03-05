@@ -1,0 +1,13 @@
+# Ignore security logs and tracking
+error.log
+rate_limit.json
+
+# Ignore environment credentials
+.env
+
+# Ignore uploaded files
+uploads/*
+!uploads/.gitkeep
+
+# Ignore macOS tracking files
+.DS_Store
