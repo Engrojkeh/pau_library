@@ -14,7 +14,7 @@ function customErrorHandler($errno, $errstr, $errfile, $errline) {
     // Only show friendly message to the user if it's a fatal error
     if ($errno == E_USER_ERROR || $errno == E_ERROR || $errno == E_CORE_ERROR || $errno == E_COMPILE_ERROR) {
         http_response_code(500);
-        die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333;'><h3>Oops! Something went wrong.</h3><p>We are experiencing technical difficulties. Please try again later.</p></div>");
+        die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333;'><h3>Debug Info (Fatal):</h3><p><b>Error:</b> $errstr</p><p><b>File:</b> $errfile on line $errline</p></div>");
     }
     return true; // Don't execute PHP internal error handler
 }
@@ -23,8 +23,9 @@ function customExceptionHandler($exception) {
     $logMessage = "[" . date('Y-m-d H:i:s') . "] Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine() . PHP_EOL;
     error_log($logMessage, 3, __DIR__ . '/error.log');
     
+    // TEMPORARY DEBUGGING: Force the exact error to print to the screen
     http_response_code(500);
-    die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333;'><h3>Oops! Something went wrong.</h3><p>We are experiencing technical difficulties. Please try again later.</p></div>");
+    die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333;'><h3>Debug Info:</h3><p><b>Error:</b> " . htmlspecialchars($exception->getMessage()) . "</p><p><b>File:</b> " . htmlspecialchars($exception->getFile()) . " on line " . $exception->getLine() . "</p></div>");
 }
 
 set_error_handler("customErrorHandler");
@@ -47,16 +48,19 @@ function loadEnv($path) {
     
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue; // Skip comments
+        $line = trim($line);
+        if (empty($line) || strpos($line, '#') === 0) continue; // Skip empty/comments
         
-        list($name, $value) = explode('=', $line, 2);
-        $name = trim($name);
-        $value = trim($value);
-        
-        if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
-            putenv(sprintf('%s=%s', $name, $value));
-            $_ENV[$name] = $value;
-            $_SERVER[$name] = $value;
+        $parts = explode('=', $line, 2);
+        if (count($parts) === 2) {
+            $name = trim($parts[0]);
+            $value = trim($parts[1]);
+            
+            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                putenv(sprintf('%s=%s', $name, $value));
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
         }
     }
 }

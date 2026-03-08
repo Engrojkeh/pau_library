@@ -2,8 +2,11 @@
 // add_book.php
 session_start();
 include 'db_conn.php';
-require_once 'libs/phpqrcode/qrlib.php'; 
-
+$qr_lib_path = __DIR__ . '/libs/phpqrcode/qrlib.php';
+if (!file_exists($qr_lib_path)) {
+    die("<div style='text-align:center; padding:50px; font-family:sans-serif;'><h3>Missing Library Error</h3><p>The system cannot find the <b>libs/phpqrcode</b> folder. Please ensure the 'libs' folder was successfully extracted to your server.</p></div>");
+}
+require_once $qr_lib_path;
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: index.php"); exit();
 }
@@ -150,6 +153,18 @@ if (isset($_POST['submit'])) {
             #qrModal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; text-align: center; }
             .modal-footer { display: none; }
         }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .top-navbar { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; }
+            .nav-profile { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; margin-top: 10px; }
+            .main-content { padding: 20px 15px; }
+            .content-card { padding: 20px !important; }
+            h3.page-title { font-size: 1.5rem; }
+            .modal-content { border-radius: 12px !important; }
+            .modal-body { padding: 30px !important; }
+            .modal-body img { width: 150px !important; height: 150px !important; }
+        }
     </style>
 </head>
 <body>
@@ -252,13 +267,9 @@ if (isset($_POST['submit'])) {
 <?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="faculties.js?v=2"></script>
 <script>
-// Master List
-const universityData = {
-    "School of Science & Technology": ["Computer Science", "Information Technology", "Mathematics & Statistics"],
-    "College of Engineering": ["Civil Engineering", "Mechanical Engineering", "Electrical Engineering"],
-    "School of Management & Social Sciences": ["Accounting", "Business Administration", "Economics"]
-};
+// Logic using global universityData from faculties.js
 
 function loadFaculties() {
     let facultySelect = document.getElementById("faculty");

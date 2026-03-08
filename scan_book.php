@@ -45,7 +45,7 @@ if (isset($_GET['msg'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="js/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
         :root {
@@ -147,6 +147,16 @@ if (isset($_GET['msg'])) {
         }
 
         .alert-custom { border-radius: 12px; border: none; font-weight: 600; padding: 15px; }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .top-navbar { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; }
+            .nav-profile { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; margin-top: 10px; }
+            .main-content { padding: 20px 15px; }
+            .content-card { padding: 20px !important; }
+            h3.page-title { font-size: 1.5rem; }
+            #reader { min-height: 250px; }
+        }
     </style>
 </head>
 <body>
@@ -193,6 +203,25 @@ if (isset($_GET['msg'])) {
         </div>
 
         <div id="reader"></div>
+        <div id="file-reader-dummy" style="display:none;"></div>
+
+        <div class="mt-4 p-3 bg-light rounded-3 text-center border">
+            <h6 class="text-muted fw-bold mb-3"><i class="fas fa-server me-2"></i> OR SELECT FROM SERVER</h6>
+            <select id="server-qr-select" class="form-select w-100 mx-auto" style="border-radius:12px; font-weight:600; border: 2px solid var(--primary-blue);">
+                <option value="">Choose an existing QR code...</option>
+                <?php
+                if (is_dir('uploads')) {
+                    $files = array_diff(scandir('uploads'), array('.', '..'));
+                    foreach ($files as $file) {
+                        if (preg_match("/\.(png|jpg|jpeg)$/i", $file)) {
+                            echo "<option value='uploads/" . htmlspecialchars($file, ENT_QUOTES) . "'>" . htmlspecialchars($file, ENT_QUOTES) . "</option>";
+                        }
+                    }
+                }
+                ?>
+            </select>
+            <div id="server-scan-status" class="mt-3 text-center fw-bold" style="display:none;"></div>
+        </div>
 
         <div id="result_section" class="scan-result-box">
             <h5 class="text-muted fw-bold mb-3">QR Data: <span id="scanned_text" class="text-primary"></span></h5>
@@ -218,7 +247,15 @@ if (isset($_GET['msg'])) {
     </div>
 </div>
 
-<script>
+    let html5QrcodeScanner;
+
+    function setServerStatus(msg, type) {
+        let statusEl = document.getElementById('server-scan-status');
+        statusEl.style.display = 'block';
+        statusEl.className = `mt-3 text-center fw-bold text-${type}`;
+        statusEl.innerHTML = msg;
+    }
+
     function onScanSuccess(decodedText, decodedResult) {
         document.getElementById('debug-message').className = "alert alert-success alert-custom mb-4";
         document.getElementById('debug-message').innerHTML = "<i class='fas fa-check-circle me-2'></i> Scan Successful! Awaiting student matric reference.";
@@ -227,7 +264,10 @@ if (isset($_GET['msg'])) {
         document.getElementById('scanned_text').innerText = decodedText;
         document.getElementById('hidden_qr_data').value = decodedText;
         
-        html5QrcodeScanner.clear();
+        // Scroll down to the result seamlessly
+        document.getElementById('result_section').scrollIntoView({ behavior: 'smooth' });
+
+        try { if(html5QrcodeScanner) html5QrcodeScanner.clear(); } catch(e){}
     }
 
     function onScanFailure(error) {
@@ -238,18 +278,48 @@ if (isset($_GET['msg'])) {
         document.getElementById('debug-message').className = "alert alert-danger alert-custom mb-4";
         document.getElementById('debug-message').innerHTML = "<i class='fas fa-exclamation-triangle me-2'></i> <b>System Error:</b> The HTML5 QR Code library is missing or blocked.";
     } else {
-        let html5QrcodeScanner = new Html5QrcodeScanner(
+        html5QrcodeScanner = new Html5QrcodeScanner(
             "reader",
             { fps: 10, qrbox: {width: 250, height: 250} },
             false);
         
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure)
-        .then(() => {
-            document.getElementById('debug-message').innerHTML = "<i class='fas fa-camera me-2'></i> Camera securely online. Align QR code within the frame.";
-        })
-        .catch(err => {
-            document.getElementById('debug-message').className = "alert alert-danger alert-custom mb-4";
-            document.getElementById('debug-message').innerHTML = "<i class='fas fa-video-slash me-2'></i> Camera Error: " + err;
+        // Render Camera
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+
+        // Pre-initialize a single file scanner instance to prevent memory leaks/re-init crashes
+        const html5QrCodeFile = new Html5Qrcode("file-reader-dummy");
+
+        // Setup Server-Side File Scanner
+        document.getElementById('server-qr-select').addEventListener('change', async function(e) {
+            const imagePath = e.target.value;
+            if (!imagePath) {
+                document.getElementById('server-scan-status').style.display = 'none';
+                return;
+            }
+
+            setServerStatus("<i class='fas fa-spinner fa-spin me-2'></i> Downloading image from server...", "info");
+
+            try {
+                // Fetch image from server as a Blob
+                const response = await fetch(imagePath);
+                if (!response.ok) throw new Error("Network response was not ok");
+                const blob = await response.blob();
+                const file = new File([blob], "server_image.png", { type: blob.type });
+                
+                setServerStatus("<i class='fas fa-search me-2'></i> Analyzing barcode...", "primary");
+
+                html5QrCodeFile.scanFile(file, true)
+                .then(decodedText => {
+                    setServerStatus("<i class='fas fa-check-circle me-2'></i> Extracted successfully!", "success");
+                    onScanSuccess(decodedText, null);
+                })
+                .catch(err => {
+                    setServerStatus("<i class='fas fa-exclamation-triangle me-2'></i> Cannot decode this image automatically. It may be too small or blurry.", "danger");
+                });
+
+            } catch (error) {
+                setServerStatus("<i class='fas fa-exclamation-circle me-2'></i> Failed to load image from server.", "danger");
+            }
         });
     }
 </script>

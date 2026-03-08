@@ -435,6 +435,16 @@ function getCover($isbn, $title) {
         
         .dept-header:hover { background: rgba(248, 249, 250, 1); }
         .dept-header h6 { margin: 0; font-weight: 700; color: #495057; }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .top-navbar { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; }
+            .nav-profile { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; margin-top: 10px; }
+            .main-content { padding: 20px 15px; }
+            .content-card, .table-container, .stats-card { padding: 20px !important; }
+            h3.page-title { font-size: 1.5rem; }
+            .custom-alert { font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>

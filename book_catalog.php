@@ -19,10 +19,30 @@ $stmt->close();
 // 1. HANDLE DELETE
 if (isset($_GET['delete'])) {
     $id = intval($_GET['delete']);
-    $stmt = $conn->prepare("DELETE FROM books WHERE id=?");
+    
+    // a. Fetch QR Code path to delete the physical image
+    $stmt = $conn->prepare("SELECT qr_code_path FROM books WHERE id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    if ($row && !empty($row['qr_code_path'])) {
+        $qr_path = __DIR__ . '/' . ltrim($row['qr_code_path'], '/');
+        if (file_exists($qr_path) && !is_dir($qr_path)) unlink($qr_path);
+    }
     $stmt->close();
+
+    // b. Delete related transactions first (Foreign Key Constraint fix)
+    $stmt_trans = $conn->prepare("DELETE FROM transactions WHERE book_id=?");
+    $stmt_trans->bind_param("i", $id);
+    $stmt_trans->execute();
+    $stmt_trans->close();
+
+    // c. Delete the book
+    $stmt_book = $conn->prepare("DELETE FROM books WHERE id=?");
+    $stmt_book->bind_param("i", $id);
+    $stmt_book->execute();
+    $stmt_book->close();
+
     header("Location: book_catalog.php?msg=deleted");
     exit();
 }
@@ -125,6 +145,17 @@ if ($search) {
             cursor: pointer;
         }
         .dept-header:hover { background-color: #e2e6ea; }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .top-navbar { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; }
+            .nav-profile { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; margin-top: 10px; }
+            .main-content { padding: 20px 15px; }
+            .content-card, .table-container { padding: 20px !important; }
+            h3.page-title { font-size: 1.5rem; }
+            .filter-section { flex-direction: column; align-items: stretch !important; gap: 15px; }
+            .filter-section .d-flex { flex-direction: column; width: 100%; }
+        }
     </style>
 </head>
 <body>

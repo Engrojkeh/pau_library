@@ -2,10 +2,10 @@
 // db_conn.php
 require_once __DIR__ . '/security.php';
 
-$servername = getenv('DB_HOST'); // Standard connection without persistent pooling
-$username = getenv('DB_USER');
-$password = getenv('DB_PASS');
-$dbname = getenv('DB_NAME');
+$servername = $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? getenv('DB_HOST');
+$username = $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? getenv('DB_USER');
+$password = $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? getenv('DB_PASS');
+$dbname = $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? getenv('DB_NAME');
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);

@@ -9,15 +9,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $matric_no = trim($_POST['matric_no']);
     $full_name = trim($_POST['full_name']);
     $faculty = trim($_POST['faculty']);
+    $department = trim($_POST['department']);
     $raw_password = $_POST['password'];
 
     // 1. Hash the password securely
     $hashed_password = password_hash($raw_password, PASSWORD_DEFAULT);
 
     // 2. Use Prepared Statements to prevent SQL Injection
-    $stmt = $conn->prepare("INSERT INTO students (matric_no, full_name, faculty, password) VALUES (?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO students (matric_no, full_name, faculty, department, password) VALUES (?, ?, ?, ?, ?)");
     
-    $stmt->bind_param("ssss", $matric_no, $full_name, $faculty, $hashed_password);
+    $stmt->bind_param("sssss", $matric_no, $full_name, $faculty, $department, $hashed_password);
 
     if ($stmt->execute()) {
         echo "<script>alert('Registration Successful! You can now log in.'); window.location.href='index.php';</script>";
@@ -135,9 +136,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label class="form-label fw-bold text-muted small">MATRIC NO</label>
                 <input type="text" name="matric_no" class="form-control" placeholder="e.g. JEREMIAH-01" required>
             </div>
-            <div class="mb-3">
-                <label class="form-label fw-bold text-muted small">FACULTY</label>
-                <input type="text" name="faculty" class="form-control" placeholder="e.g. Science">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold text-muted small">FACULTY</label>
+                    <select id="faculty" name="faculty" class="form-select" onchange="updateDepts()" required>
+                        <option value="">Select Faculty...</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold text-muted small">DEPARTMENT</label>
+                    <select id="department" name="department" class="form-select" required>
+                        <option value="">Select Department...</option>
+                    </select>
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label fw-bold text-muted small">PASSWORD</label>
@@ -151,5 +162,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </form>
     </div>
+    
+<script src="faculties.js?v=1"></script>
+<script>
+// Logic using global universityData from faculties.js
+
+function loadFaculties() {
+    let facultySelect = document.getElementById("faculty");
+    let firstOption = facultySelect.options[0];
+    facultySelect.innerHTML = ""; facultySelect.add(firstOption);
+    for (let faculty in universityData) {
+        let option = document.createElement("option");
+        option.text = faculty; option.value = faculty;
+        facultySelect.add(option);
+    }
+}
+
+function updateDepts() {
+    let facultySelect = document.getElementById("faculty");
+    let deptSelect = document.getElementById("department");
+    let selectedFaculty = facultySelect.value;
+    
+    deptSelect.innerHTML = '<option value="">Select Department...</option>';
+    
+    if (selectedFaculty && universityData[selectedFaculty]) {
+        universityData[selectedFaculty].sort().forEach(function(dept) {
+            let option = document.createElement("option");
+            option.text = dept; option.value = dept;
+            deptSelect.add(option);
+        });
+    }
+}
+
+window.onload = function() {
+    loadFaculties();
+};
+</script>
 </body>
 </html>

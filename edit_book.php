@@ -2,7 +2,11 @@
 // edit_book.php
 session_start();
 include 'db_conn.php';
-require_once 'libs/phpqrcode/qrlib.php'; // Needed in case ISBN changes
+$qr_lib_path = __DIR__ . '/libs/phpqrcode/qrlib.php';
+if (!file_exists($qr_lib_path)) {
+    die("<div style='text-align:center; padding:50px; font-family:sans-serif;'><h3>Missing Library Error</h3><p>The system cannot find the <b>libs/phpqrcode</b> folder. Please ensure the 'libs' folder was successfully extracted to your server.</p></div>");
+}
+require_once $qr_lib_path;
 
 // Security Check
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -42,15 +46,17 @@ if (isset($_POST['update_book'])) {
     if ($isbn !== $book['isbn']) {
         // ISBN changed! We must regenerate the QR Code
         // 1. Delete old image
-        if (file_exists($book['qr_code_path'])) {
-            unlink($book['qr_code_path']); 
+        $old_qr_absolute = __DIR__ . '/' . ltrim($book['qr_code_path'], '/');
+        if (file_exists($old_qr_absolute) && !is_dir($old_qr_absolute)) {
+            unlink($old_qr_absolute); 
         }
         
         // 2. Generate new
         $qr_data = "BOOK-" . $isbn;
-        $file_name = $isbn . ".png";
+        $file_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', $isbn) . ".png";
         $file_path = "uploads/" . $file_name;
-        QRcode::png($qr_data, $file_path, QR_ECLEVEL_L, 5);
+        $new_qr_absolute = __DIR__ . '/' . $file_path;
+        QRcode::png($qr_data, $new_qr_absolute, QR_ECLEVEL_L, 5);
         
         // 3. Update with new QR path
         $sql = "UPDATE books SET title=?, author=?, isbn=?, qr_code_path=?, faculty=?, department=? WHERE id=?";
@@ -122,6 +128,14 @@ if (isset($_POST['update_book'])) {
         .nav-profile-info { display: flex; flex-direction: column; color: white; justify-content: center; }
         .nav-profile-name { font-weight: 700; font-size: 0.95rem; line-height: 1.2; }
         .nav-profile-role { font-size: 0.75rem; color: #ffc107; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .top-navbar { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; }
+            .nav-profile { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; margin-top: 10px; }
+            .container { padding: 20px 15px; mt-3; }
+            .card { padding: 10px !important; }
+        }
     </style>
 </head>
 <body>
@@ -180,9 +194,6 @@ if (isset($_POST['update_book'])) {
                                 <label>Faculty</label>
                                 <select id="faculty" name="faculty" class="form-select" onchange="updateDepts()" required>
                                     <option value="">Select Faculty...</option>
-                                    <option value="SST" <?php echo ($book['faculty'] === 'SST') ? 'selected' : ''; ?>>School of Science & Tech</option>
-                                    <option value="SMC" <?php echo ($book['faculty'] === 'SMC') ? 'selected' : ''; ?>>School of Media & Comm</option>
-                                    <option value="SIMS" <?php echo ($book['faculty'] === 'SIMS') ? 'selected' : ''; ?>>School of Management</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -202,29 +213,43 @@ if (isset($_POST['update_book'])) {
     </div>
 </div>
 
+<script src="faculties.js?v=2"></script>
 <script>
-// Keep the cascading logic
-const depts = {
-    "SST": ["Computer Science", "Electrical Engineering", "Mechanical Engineering"],
-    "SMC": ["Mass Communication", "Information Science"],
-    "SIMS": ["Accounting", "Business Administration", "Economics"]
-};
+// Logic using global universityData from faculties.js
+
+function loadFaculties() {
+    let facultySelect = document.getElementById("faculty");
+    let initialFac = "<?php echo addslashes($book['faculty'] ?? ''); ?>";
+    
+    // Clear and add default
+    let firstOption = facultySelect.options[0];
+    facultySelect.innerHTML = ""; facultySelect.add(firstOption);
+    
+    for (let faculty in universityData) {
+        let option = document.createElement("option");
+        option.text = faculty; option.value = faculty;
+        if (faculty === initialFac) option.selected = true;
+        facultySelect.add(option);
+    }
+}
 
 function updateDepts() {
-    let fac = document.getElementById("faculty").value;
+    let facultySelect = document.getElementById("faculty");
     let deptSelect = document.getElementById("department");
-    let initialDept = "<?php echo addslashes($book['department']); ?>";
-    
+    let selectedFaculty = facultySelect.value;
+    let initialDept = "<?php echo addslashes($book['department'] ?? ''); ?>";
+    let initialFac = "<?php echo addslashes($book['faculty'] ?? ''); ?>";
+
     // Clear old options
     deptSelect.innerHTML = '<option value="">Select Department...</option>';
     
-    if (fac && depts[fac]) {
-        depts[fac].forEach(function(d) {
+    if (selectedFaculty && universityData[selectedFaculty]) {
+        universityData[selectedFaculty].sort().forEach(function(dept) {
             let option = document.createElement("option");
-            option.text = d;
-            option.value = d;
+            option.text = dept;
+            option.value = dept;
             // Pre-select if initial
-            if (fac === "<?php echo addslashes($book['faculty']); ?>" && d === initialDept) {
+            if (selectedFaculty === initialFac && dept === initialDept) {
                 option.selected = true;
             }
             deptSelect.add(option);
@@ -234,6 +259,7 @@ function updateDepts() {
 
 // Pre-fill department options on page load
 window.onload = function() {
+    loadFaculties();
     updateDepts();
 };
 </script>

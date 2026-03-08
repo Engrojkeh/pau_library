@@ -151,6 +151,18 @@ $stmt->close();
         .form-control:focus { box-shadow: none; border-color: var(--primary-blue); }
         .btn-primary { background: var(--primary-blue); border: none; padding: 12px; font-weight: 600; border-radius: 10px; transition: all 0.3s; }
         .btn-primary:hover { background: var(--secondary-blue); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .top-navbar { padding: 15px 20px; flex-direction: column; gap: 15px; text-align: center; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; }
+            .nav-profile { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; margin-top: 10px; }
+            .main-content { padding: 20px 15px; }
+            .content-card, .table-container, .stats-card { padding: 20px !important; }
+            h3.page-title { font-size: 1.5rem; }
+            .filter-section { flex-direction: column; align-items: stretch !important; gap: 15px; }
+            .stats-card h2 { font-size: 1.8rem; }
+            .stats-card i { font-size: 1.8rem; }
+        }
     </style>
 </head>
 <body>
