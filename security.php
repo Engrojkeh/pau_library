@@ -12,9 +12,9 @@ function customErrorHandler($errno, $errstr, $errfile, $errline) {
     error_log($logMessage, 3, __DIR__ . '/error.log');
     
     // Only show friendly message to the user if it's a fatal error
-    if ($errno == E_USER_ERROR || $errno == E_ERROR || $errno == E_CORE_ERROR || $errno == E_COMPILE_ERROR) {
+    if ($errno == E_USER_ERROR || $errno == E_ERROR || $errno == E_CORE_ERROR || $errno == E_COMPILE_ERROR || $errno == E_RECOVERABLE_ERROR) {
         http_response_code(500);
-        die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333;'><h3>Debug Info (Fatal):</h3><p><b>Error:</b> $errstr</p><p><b>File:</b> $errfile on line $errline</p></div>");
+        die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.1); margin: 50px auto; max-width: 500px;'><h3><i class=\"fas fa-exclamation-triangle\" style=\"color:#d9534f; margin-right:10px;\"></i> System Error</h3><p>An unexpected service error occurred. Please try again later.</p></div>");
     }
     return true; // Don't execute PHP internal error handler
 }
@@ -23,9 +23,9 @@ function customExceptionHandler($exception) {
     $logMessage = "[" . date('Y-m-d H:i:s') . "] Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine() . PHP_EOL;
     error_log($logMessage, 3, __DIR__ . '/error.log');
     
-    // TEMPORARY DEBUGGING: Force the exact error to print to the screen
+    // Final Production Error Message
     http_response_code(500);
-    die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333;'><h3>Debug Info:</h3><p><b>Error:</b> " . htmlspecialchars($exception->getMessage()) . "</p><p><b>File:</b> " . htmlspecialchars($exception->getFile()) . " on line " . $exception->getLine() . "</p></div>");
+    die("<div style='font-family:sans-serif; text-align:center; background:#f4f7f6; padding:50px; color:#333; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.1); margin: 50px auto; max-width: 500px;'><h3><i class=\"fas fa-server\" style=\"color:#d9534f; margin-right:10px;\"></i> Service Unavailable</h3><p>The library server encountered an application error.</p><br><a href='index.php' style='display:inline-block; padding: 10px 20px; background: #003366; color: white; text-decoration: none; border-radius: 5px; font-weight:bold;'>Return to Dashboard</a></div>");
 }
 
 set_error_handler("customErrorHandler");
