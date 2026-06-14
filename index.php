@@ -218,7 +218,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <div class="login-card">
         <div class="text-center">
-            <img src="logo.png" onerror="this.src='https://ui-avatars.com/api/?name=PAU&background=003366&color=fff&rounded=true'" alt="PAU Logo" class="school-logo">
+            <img src="assets/logo.png" onerror="this.src='https://ui-avatars.com/api/?name=PAU&background=003366&color=fff&rounded=true'" alt="PAU Logo" class="school-logo">
             <h4 class="welcome-text">SMART LIBRARY</h4>
             <p class="text-muted mb-4">Pinnacle African University</p>
         </div>

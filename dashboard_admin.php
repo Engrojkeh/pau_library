@@ -68,7 +68,7 @@ $daily_report = $conn->query($report_sql);
 
         body { 
             font-family: 'Inter', sans-serif;
-            background: url('admin_background.png') no-repeat center center fixed; 
+            background: url('assets/admin_background.png') no-repeat center center fixed; 
             background-size: cover;
             background-color: var(--bg-light); 
             color: var(--text-dark);

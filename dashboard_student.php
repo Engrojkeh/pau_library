@@ -100,7 +100,7 @@ function getCover($isbn, $title) {
 
         body { 
             font-family: 'Inter', sans-serif;
-            background: url('student_background.png') no-repeat center center fixed; 
+            background: url('assets/student_background.png') no-repeat center center fixed; 
             background-size: cover;
             background-color: var(--bg-light); 
             color: var(--text-dark);

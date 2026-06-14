@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
     </div>
     
-<script src="faculties.js?v=1"></script>
+<script src="js/faculties.js"></script>
 <script>
 // Logic using global universityData from faculties.js
 
