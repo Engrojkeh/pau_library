@@ -11,3 +11,5 @@ uploads/*
 
 # Ignore macOS tracking files
 .DS_Store
+
+database_schema.sql
